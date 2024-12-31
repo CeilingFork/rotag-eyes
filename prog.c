@@ -7,8 +7,9 @@ ie transform(123)=transform(312)=transform(231)=123
 
 How it works:
 -first it finds the smallest value glyph in the trigram(min)
--then an occurrence of this minimal glyph that is preceeded by a different glyph
-	(this is essentially to "group" all of the minimal glyphs at the start of the representation eg.: transform(121)->112
+-then an occurrence of this minimal glyph that is preceeded by a different glyph,
+	if no such glyph exists then any glyph will do.
+	(this is essentially to "group" all of the minimal glyphs at the start of the representation eg.: transform(121)-> 112)
 -now "rotate" the trigram such that the glyph found in the previous step is at the start(index 0) and the order of the glyphs is preseved
 
 example for a few values:
