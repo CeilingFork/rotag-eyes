@@ -74,49 +74,6 @@ void build_magic_index_table(char(*table)[4])
 	return;
 }
 
-int frequency_analysis_or_something_like_that(FILE*source,FILE*output_file)
-{
-	
-	int frequencies[5][5][5]={0};
-	int c = fgetc(source);
-	char message_name[32] = {0};
-	int index = 0;	
-	while(c!=',')//Read the message name
-	{
-		message_name[index++]=c;
-		c=fgetc(source);
-		if(c==EOF)return 1;
-	}
-	char buffer[3];
-	index=0;
-	while(c!='\n')//Scan through the glyphs
-	{
-		c=fgetc(source);
-		if(c==EOF){printf("EOF?!\n");break;}
-		buffer[index++]=c;
-		if(index==3)//After an entire trigram has been read
-		{
-			index=0;
-			transform(buffer);//Transform the read trigram into the proper form(See transform for more information)
-			frequencies[buffer[0]-'0'][buffer[1]-'0'][buffer[2]-'0']+=1;//Add the occurrence to the frequency table
-		}
-	}
-	fprintf(output_file,"%s\n",message_name);
-	int magic_index = 0;
-	for(int i = 0; i < 5;++i){		//Loop through all trigrams in the table and print their frequency
-		for(int j = 0; j < 5;++j){
-			for(int k = 0; k < 5;++k)
-			{
-				char trigram[4] = {i+'0',j+'0',k+'0',0};
-				char copy[4];
-				strcpy(copy,trigram);
-				transform(copy);
-				if(strcmp(copy,trigram)==0)//Only print fixed points of transform
-					fprintf(output_file,"%1d%1d%1d\t%d\t%d\n",i,j,k,magic_index++,frequencies[i][j][k]);
-	}}}
-	return 0;
-}
-
 typedef enum RepresentationFormat {
 	TRIGRAM_FORMAT=0, //Uses the trigram produced by transform 
 	ASCII_INDEX=1,	//Uses the "magic index" of the above described trigram in ASCII+32
@@ -209,7 +166,6 @@ int main(int argc, char*argv[])
 			if(output_file==NULL)
 			{
 				printf("Failed to open output file \"%s\", falling back to stdout\n",argv[i]+2);
-				output_file=stdout;
 			}
 		}
 		if(strncmp(argv[i],"i:",2)==0)
@@ -217,24 +173,19 @@ int main(int argc, char*argv[])
 			input_file=fopen(argv[i]+2,"r");
 			if(input_file==NULL)
 			{
-				printf("Failed to open input file \"%s\", falling back to raw.txt\n",argv[i]+2);
-				input_file=NULL;
+				printf("Failed to open input file \"%s\"\n",argv[i]+2);
+				return 1;
 			}
 		}
 	}
 	if(input_file==NULL)
 	{
-		FILE*input_file=fopen("raw.txt","r");
-		if(input_file==NULL)
-		{
-			puts("Failed to open file:\"raw.txt\"");
-			return 1;
-		}
+		printf("No input file specified!\n");
+		return 1;
 	}
-	printf(	"0 exit"
-			"\n1 list frequencies\n"
-			"2 list each uique symbol in the rotationally agnostic representation"
-			"\n3 translate cyphertext to the rotationally agnostic representation\n");
+	printf(	"0 exit\n"
+			"1 list each uique symbol in the rotationally agnostic representation\n"
+			"2 translate cyphertext to the rotationally agnostic representation\n>");
 	int answer;
 	while(scanf("%d",&answer)!=1);
 	switch(answer)
@@ -242,25 +193,15 @@ int main(int argc, char*argv[])
 		case 0:
 			break;
 		case 1:
-			while(frequency_analysis_or_something_like_that(input_file,output_file)==0);
+			list(output_file==NULL?stdout:output_file);
 			break;
 		case 2:
-			list(output_file);
-			break;
-		case 3:
 			RepresentationFormat f;
 			while(printf("Which format?(0=trigram, 1=ascii+32, 2=decimal index):"),scanf("%d",&f)!=1 && (f<0 || f>2));
 			translate(input_file,f,output_file);
-			break;
-		case 4:
-			char magic_index_table[45][4]={0};
-			build_magic_index_table(magic_index_table);
-			for(int i = 0; i < 45;++i)
-				fprintf(output_file,"%s\n",magic_index_table[i]);
-			
-			
+			break;	
 	}
 	fclose(input_file);
-	fclose(output_file);
+	if(output_file!=stdout)fclose(output_file);
 	return 0;
 }
