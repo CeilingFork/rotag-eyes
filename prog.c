@@ -23,7 +23,7 @@ example for a few values:
 -minimal glyph is '1'
 -starting point is 0
 -rotation: 132 -> 132
-(Notice how this is a fixed point of the function, this means that we can find all of the valid symbols by looping through all possible trigrams
+(Notice how this is a fixed point of the function, this means that we can find all of the valid letters by looping through all possible trigrams
  and selecting the ones whose transformed is themself)
  
 232
@@ -90,46 +90,37 @@ void translate(FILE*source, RepresentationFormat format,FILE*output_file)
 	build_magic_index_table(magic_index_table);
 	
 	char buffer[4]={0};
-	int index = -1;
+	int index = 0;
 	for(char c = fgetc(source); c!=EOF; c=fgetc(source))
 	{
-		//Just print the name part normally
-		if(index==-1)
+		if(c=='\n')
 		{
-			fputc(c,output_file);
-			if(c==',')index=0;
+			fputc('\n',output_file);
+			index=0;
+			continue;
 		}
-		else
+		buffer[index++]=c;
+		if(index==3)
 		{
-			if(c=='\n')
+			transform(buffer);
+			switch(format)
 			{
-				fputc('\n',output_file);
-				index=-1;
-				continue;
+				default:
+				case TRIGRAM_FORMAT:
+					fprintf(output_file,"%3s ",buffer);
+					break;
+				case ASCII_INDEX:
+					int aindex=0;
+					while(aindex<45 && strcmp(buffer,magic_index_table[aindex])!=0)++aindex;
+					fprintf(output_file,"%c",aindex+32);
+					break;
+				case DECIMAL_INDEX:
+					int dindex=0;
+					while(dindex<45 && strcmp(buffer,magic_index_table[dindex])!=0)++dindex;
+					fprintf(output_file,"%02d ",dindex);
+					break;
 			}
-			buffer[index++]=c;
-			if(index==3)
-			{
-				transform(buffer);
-				switch(format)
-				{
-					default:
-					case TRIGRAM_FORMAT:
-						fprintf(output_file," %3s",buffer);
-						break;
-					case ASCII_INDEX:
-						int aindex=0;
-						while(aindex<45 && strcmp(buffer,magic_index_table[aindex])!=0)++aindex;
-						fprintf(output_file,"%c",aindex+32);
-						break;
-					case DECIMAL_INDEX:
-						int dindex=0;
-						while(dindex<45 && strcmp(buffer,magic_index_table[dindex])!=0)++dindex;
-						fprintf(output_file," %02d",dindex);
-						break;
-				}
-				index=0;
-			}
+			index=0;
 		}
 	}
 	return;
@@ -137,7 +128,9 @@ void translate(FILE*source, RepresentationFormat format,FILE*output_file)
 
 void list(FILE*output_file)
 {
-	//Lists the trigrams used for the rotationally agnostic representation
+	/*Lists the trigrams used for the rotationally agnostic representation
+	  Along with their magic index and ASCII+32 equivalent*/
+	int counter = 0;
 	char temp[4] = {0};
 	char temp2[4]= {0};
 	for(int i = 0; i < 5*5*5;++i)
@@ -149,7 +142,8 @@ void list(FILE*output_file)
 		transform(temp2);
 		if(strcmp(temp,temp2)==0)
 		{
-			fprintf(output_file,"%s\n",temp2);
+			fprintf(output_file,"\"%3s\" %02d '%c'\n",temp2,counter,counter+32);
+			++counter;
 		}
 	}
 	return;
@@ -167,6 +161,7 @@ int main(int argc, char*argv[])
 			if(output_file==NULL)
 			{
 				printf("Failed to open output file \"%s\", falling back to stdout\n",argv[i]+2);
+				output_file=stdout;
 			}
 		}
 		if(strncmp(argv[i],"i:",2)==0)
@@ -185,7 +180,7 @@ int main(int argc, char*argv[])
 		return 1;
 	}
 	printf(	"0 exit\n"
-			"1 list each uique symbol in the rotationally agnostic representation\n"
+			"1 list each uique letter in the rotationally agnostic representation\n"
 			"2 translate cyphertext to the rotationally agnostic representation\n>");
 	int answer;
 	while(scanf("%d",&answer)!=1);
@@ -194,7 +189,7 @@ int main(int argc, char*argv[])
 		case 0:
 			break;
 		case 1:
-			list(output_file==NULL?stdout:output_file);
+			list(output_file);
 			break;
 		case 2:
 			RepresentationFormat f;
