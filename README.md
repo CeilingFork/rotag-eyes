@@ -1,5 +1,4 @@
 raw.txt is each eye message preceeded by their name and a , and terminated by a newline
-(The first line is all messages in a single line)
 
 prog.c is the code itself with comments that hopefully explain how everything works.
 The compiled program expects at least 1 argument in the format "i:filename" which tells it what file to read the ciphertext from.
