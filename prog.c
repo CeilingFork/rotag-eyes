@@ -137,7 +137,7 @@ void translate(FILE*source, RepresentationFormat format,FILE*output_file)
 
 void list(FILE*output_file)
 {
-	//This the trigrams used for the rotationally agnostic representation
+	//Lists the trigrams used for the rotationally agnostic representation
 	char temp[4] = {0};
 	char temp2[4]= {0};
 	for(int i = 0; i < 5*5*5;++i)
